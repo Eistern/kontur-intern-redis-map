@@ -9,15 +9,13 @@ import java.util.Set;
 import redis.clients.jedis.Response;
 import redis.clients.jedis.Transaction;
 
-/**
- * @author Gregory Koshelev
- */
-public class RedisMap implements Map<String,String> {
+/** @author Gregory Koshelev */
+public class RedisMap implements Map<String, String> {
   private static volatile JedisPool jedisPool = new JedisPool();
   private final String mapId;
 
   {
-    try (Jedis jedisConnection = jedisPool.getResource()){
+    try (Jedis jedisConnection = jedisPool.getResource()) {
       this.mapId = "redis-map:" + jedisConnection.incr("redis-map-id-generator").toString();
     }
   }
@@ -34,15 +32,13 @@ public class RedisMap implements Map<String,String> {
 
   @Override
   public boolean containsKey(Object key) {
-    if (key == null)
-      throw new NullPointerException();
+    if (key == null) throw new NullPointerException();
 
-    if (!(key instanceof String))
-      throw new ClassCastException();
+    if (!(key instanceof String)) throw new ClassCastException();
 
     Boolean result;
-    try (Jedis jedisConnection = jedisPool.getResource()){
-       result = jedisConnection.hexists(mapId, (String) key);
+    try (Jedis jedisConnection = jedisPool.getResource()) {
+      result = jedisConnection.hexists(mapId, (String) key);
     }
 
     return result;
@@ -69,8 +65,7 @@ public class RedisMap implements Map<String,String> {
 
       transaction.exec();
 
-      if (checkResponse.get() == 0L)
-        result = previousValue.get();
+      if (checkResponse.get() == 0L) result = previousValue.get();
     }
 
     return result;
