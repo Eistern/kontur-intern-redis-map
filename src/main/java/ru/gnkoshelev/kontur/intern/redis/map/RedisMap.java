@@ -1,24 +1,87 @@
 package ru.gnkoshelev.kontur.intern.redis.map;
 
+import java.lang.ref.Cleaner;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Response;
 import redis.clients.jedis.Transaction;
 
-/** @author Gregory Koshelev */
-public class RedisMap implements Map<String, String> {
-  private static volatile JedisPool jedisPool = new JedisPool();
-  private final String MAP_ID;
+/**
+ * @author Daniil Zulin
+ */
+public class RedisMap implements Map<String, String>, AutoCloseable {
 
-  {
+  private static final String REDIS_IP = "192.168.1.129";
+  private static final int REDIS_PORT = 6379;
+  private static final String GENERATOR_ID = "redis-map-id-generator";
+  private static final String CONNECTIONS_SUFFIX = ":connections";
+  private static final String REDIS_MAP_PREFIX = "redis-map:";
+  private static final String REDIS_DISCONNECT_SCRIPT =
+      "local connections = redis.call(\"decr\", KEYS[2])\n"
+          + "if connections == 0 then\n"
+          + "\tredis.call(\"unlink\", KEYS[1])\n"
+          + "\tredis.call(\"unlink\", KEYS[2])\n"
+          + "end\n";
+  private static final JedisPool jedisPool = new JedisPool(REDIS_IP, REDIS_PORT);
+  private static final Cleaner redisMapCleaner = Cleaner.create();
+  private static final ShutdownController shutdownController = new ShutdownController();
+  private final MapCleaner cleaner;
+  private final Cleaner.Cleanable cleanable;
+  private String MAP_ID;
+
+  static {
+    Runtime.getRuntime().addShutdownHook(shutdownController);
+  }
+
+  public RedisMap() {
     try (Jedis jedisConnection = jedisPool.getResource()) {
-      this.MAP_ID = "redis-map:" + jedisConnection.incr("redis-map-id-generator").toString();
+      MAP_ID = REDIS_MAP_PREFIX + jedisConnection.incr(GENERATOR_ID);
+      jedisConnection.incr(MAP_ID + CONNECTIONS_SUFFIX);
     }
+
+    cleaner = new MapCleaner(MAP_ID);
+    cleanable = redisMapCleaner.register(this, cleaner);
+
+    shutdownController.registerMap(MAP_ID);
+  }
+
+  @SuppressWarnings("CopyConstructorMissesField")
+  public RedisMap(RedisMap connectedMap) {
+    this(connectedMap.MAP_ID);
+  }
+
+  public RedisMap(String connectionKey) {
+    MAP_ID = connectionKey;
+    try (Jedis jedisConnection = jedisPool.getResource()) {
+      jedisConnection.incr(MAP_ID + CONNECTIONS_SUFFIX);
+    }
+
+    cleaner = new MapCleaner(MAP_ID);
+    cleanable = redisMapCleaner.register(this, cleaner);
+
+    shutdownController.registerMap(MAP_ID);
+  }
+
+  @Override
+  public void close() {
+    cleanable.clean();
+  }
+
+  public String getMapKey() {
+    return MAP_ID;
+  }
+
+  public void connectToRedisMap(String mapId) {
+    cleaner.run();
+    MAP_ID = mapId;
+    cleaner.setMapId(mapId);
   }
 
   @Override
@@ -59,7 +122,7 @@ public class RedisMap implements Map<String, String> {
       throw new ClassCastException();
     }
 
-    boolean result = false;
+    boolean result;
     try (Jedis jedisConnection = jedisPool.getResource()) {
       List<String> values = jedisConnection.hvals(MAP_ID);
       result = values.contains(value);
@@ -154,8 +217,7 @@ public class RedisMap implements Map<String, String> {
 
   @Override
   public Set<String> keySet() {
-    // TODO HARD TASK
-    throw new UnsupportedOperationException();
+    return new RedisKeySet(this);
   }
 
   @Override
@@ -168,5 +230,62 @@ public class RedisMap implements Map<String, String> {
   public Set<Entry<String, String>> entrySet() {
     // TODO HARD TASK
     throw new UnsupportedOperationException();
+  }
+
+  Set<String> pullKeys() {
+    Set<String> result;
+    try (Jedis jedisConnection = jedisPool.getResource()) {
+      result = jedisConnection.hkeys(MAP_ID);
+    }
+
+    return result;
+  }
+
+  private static final class ShutdownController extends Thread {
+
+    private List<String> mapIds = new ArrayList<>();
+
+    private void registerMap(String mapId) {
+      mapIds.add(mapId);
+    }
+
+    private void removeMap(String mapId) {
+      mapIds.remove(mapId);
+    }
+
+    @Override
+    public void run() {
+      try (Jedis jedisConnection = new Jedis(REDIS_IP, REDIS_PORT)) {
+        for (String mapId : mapIds) {
+          jedisConnection.eval(REDIS_DISCONNECT_SCRIPT, 2, mapId, mapId + CONNECTIONS_SUFFIX);
+        }
+      }
+    }
+  }
+
+  private static final class MapCleaner implements Runnable {
+
+    private volatile String MAP_ID;
+
+    private MapCleaner(String mapId) {
+      MAP_ID = mapId;
+    }
+
+    private void setMapId(String mapId) {
+      MAP_ID = mapId;
+    }
+
+    @Override
+    public void run() {
+      if (MAP_ID == null) {
+        Logger.getLogger(MapCleaner.class.getName()).warning("MAP ID IS NULL");
+        return;
+      }
+      try (Jedis jedisConnection = new Jedis(REDIS_IP, REDIS_PORT)) {
+        jedisConnection.eval(REDIS_DISCONNECT_SCRIPT, 2, MAP_ID, MAP_ID + CONNECTIONS_SUFFIX);
+      }
+      shutdownController.removeMap(MAP_ID);
+      MAP_ID = null;
+    }
   }
 }
