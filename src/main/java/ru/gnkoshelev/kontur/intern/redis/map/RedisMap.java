@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Response;
+import redis.clients.jedis.ScanResult;
 import redis.clients.jedis.Transaction;
 
 /**
@@ -35,6 +36,7 @@ public class RedisMap implements Map<String, String>, AutoCloseable {
   private final MapCleaner cleaner;
   private final Cleaner.Cleanable cleanable;
   private String MAP_ID;
+  private int modificationCount = 0;
 
   static {
     Runtime.getRuntime().addShutdownHook(shutdownController);
@@ -122,10 +124,13 @@ public class RedisMap implements Map<String, String>, AutoCloseable {
       throw new ClassCastException();
     }
 
-    boolean result;
+    boolean result = false;
     try (Jedis jedisConnection = jedisPool.getResource()) {
-      List<String> values = jedisConnection.hvals(MAP_ID);
-      result = values.contains(value);
+      ScanResult<Map.Entry<String, String>> scanResult = jedisConnection.hscan(MAP_ID, "0");
+      while (!result && !scanResult.isCompleteIteration()) {
+        result = scanResult.getResult().parallelStream().anyMatch(e -> e.getValue().equals(value));
+        scanResult = jedisConnection.hscan(MAP_ID, scanResult.getCursor());
+      }
     }
     return result;
   }
@@ -144,7 +149,6 @@ public class RedisMap implements Map<String, String>, AutoCloseable {
     try (Jedis jedisConnection = jedisPool.getResource()) {
       result = jedisConnection.hget(MAP_ID, (String) key);
     }
-    // TODO TEST 'nil' VALUE (Jedis.get SOMEHOW RETURNS JUST null :( )
     return result;
   }
 
@@ -164,6 +168,7 @@ public class RedisMap implements Map<String, String>, AutoCloseable {
       }
     }
 
+    modificationCount++;
     return result;
   }
 
@@ -190,6 +195,8 @@ public class RedisMap implements Map<String, String>, AutoCloseable {
         result = previousValue.get();
       }
     }
+
+    modificationCount++;
     return result;
   }
 
@@ -206,6 +213,8 @@ public class RedisMap implements Map<String, String>, AutoCloseable {
     try (Jedis jedisConnection = jedisPool.getResource()) {
       jedisConnection.hmset(MAP_ID, Collections.unmodifiableMap(m));
     }
+
+    modificationCount += m.size();
   }
 
   @Override
@@ -213,6 +222,7 @@ public class RedisMap implements Map<String, String>, AutoCloseable {
     try (Jedis jedisConnection = jedisPool.getResource()) {
       jedisConnection.unlink(MAP_ID);
     }
+    modificationCount++;
   }
 
   @Override
@@ -222,23 +232,24 @@ public class RedisMap implements Map<String, String>, AutoCloseable {
 
   @Override
   public Collection<String> values() {
-    // TODO HARD TASK
-    throw new UnsupportedOperationException();
+    return new RedisValueCollection(this);
   }
 
   @Override
   public Set<Entry<String, String>> entrySet() {
-    // TODO HARD TASK
-    throw new UnsupportedOperationException();
+    return new RedisEntrySet(this);
   }
 
-  Set<String> pullKeys() {
-    Set<String> result;
-    try (Jedis jedisConnection = jedisPool.getResource()) {
-      result = jedisConnection.hkeys(MAP_ID);
-    }
+  int getModificationCount() {
+    return modificationCount;
+  }
 
-    return result;
+  ScanResult<Map.Entry<String, String>> iterateOverMap(String iteratorKey) {
+    ScanResult<Map.Entry<String, String>> scanResult;
+    try (Jedis jedisConnection = jedisPool.getResource()) {
+      scanResult = jedisConnection.hscan(MAP_ID, iteratorKey);
+    }
+    return scanResult;
   }
 
   private static final class ShutdownController extends Thread {

@@ -13,17 +13,17 @@ final class RedisKeySet extends AbstractSet<String> {
 
   @Override
   public int size() {
-    return source.pullKeys().size();
+    return source.size();
   }
 
   @Override
   public boolean contains(Object o) {
-    return source.pullKeys().contains(o);
+    return source.containsKey(o);
   }
 
   @Override
   public Iterator<String> iterator() {
-    return null;
+    return new RedisKeyIterator();
   }
 
   @Override
@@ -34,5 +34,16 @@ final class RedisKeySet extends AbstractSet<String> {
   @Override
   public void clear() {
     source.clear();
+  }
+
+  final class RedisKeyIterator extends RedisMapIterator implements Iterator<String> {
+
+    RedisKeyIterator() {
+      super(source);
+    }
+
+    public String next() {
+      return super.nextEntry().getKey();
+    }
   }
 }

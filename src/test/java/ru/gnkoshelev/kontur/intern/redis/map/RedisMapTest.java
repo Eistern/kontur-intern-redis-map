@@ -1,12 +1,12 @@
 package ru.gnkoshelev.kontur.intern.redis.map;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * @author Daniil Zulin
@@ -37,12 +37,13 @@ public class RedisMapTest {
   }
 
   @Test
-  public void valuesTest() {
+  public void valuesBasicTest() {
     Map<String, String> map = new HashMap<>();
     Collection<String> values = map.values();
 
     map.put("test", "aaa");
     map.put("1", "aaa");
+
     Assert.assertEquals(2, values.size());
     Assert.assertTrue(values.contains("aaa"));
 
@@ -52,7 +53,7 @@ public class RedisMapTest {
   }
 
   @Test
-  public void keySeyTest() {
+  public void keySetBasicTest() {
     Map<String, String> map = new RedisMap();
     Set<String> keys = map.keySet();
 
@@ -63,5 +64,28 @@ public class RedisMapTest {
     map.clear();
     Assert.assertEquals(0, keys.size());
     Assert.assertFalse(keys.contains("test"));
+  }
+
+  @Test
+  public void entrySetBasicTest() {
+    Map<String, String> map = new RedisMap();
+    Set<Entry<String, String>> entrySet = map.entrySet();
+
+
+  }
+
+  @Test
+  public void connectTest() {
+    RedisMap map = new RedisMap();
+    map.put("first", "1");
+
+    Map<String, String> copiedMap = new RedisMap(map);
+    Map<String, String> copiedByKeyMap = new RedisMap(map.getMapKey());
+    RedisMap postCopiedMap = new RedisMap();
+    postCopiedMap.connectToRedisMap(map.getMapKey());
+
+    Assert.assertEquals(copiedMap.get("first"), map.get("first"));
+    Assert.assertEquals(copiedByKeyMap.get("first"), map.get("first"));
+    Assert.assertEquals(postCopiedMap.get("first"), map.get("first"));
   }
 }
