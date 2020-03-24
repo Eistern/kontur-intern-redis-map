@@ -30,6 +30,9 @@ abstract class RedisMapIterator {
   }
 
   public Entry<String, String> nextEntry() {
+    if (localModifications != this.source.getModificationCount()) {
+      throw new ConcurrentModificationException();
+    }
     if (!hasNext()) {
       throw new NoSuchElementException();
     }

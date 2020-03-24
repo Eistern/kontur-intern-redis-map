@@ -22,7 +22,7 @@ public class RedisMapTest {
     map2.put("one", "ONE");
     map2.put("two", "TWO");
 
-    Assert.assertNull(map1.get("non-existent"));
+    Assert.assertNull(map1.get("non_existent"));
     Assert.assertEquals("1", map1.get("one"));
     Assert.assertEquals(1, map1.size());
     Assert.assertEquals(2, map2.size());
@@ -34,44 +34,6 @@ public class RedisMapTest {
 
     Assert.assertTrue(map1.containsKey("one"));
     Assert.assertFalse(map1.containsKey("two"));
-  }
-
-  @Test
-  public void valuesBasicTest() {
-    Map<String, String> map = new HashMap<>();
-    Collection<String> values = map.values();
-
-    map.put("test", "aaa");
-    map.put("1", "aaa");
-
-    Assert.assertEquals(2, values.size());
-    Assert.assertTrue(values.contains("aaa"));
-
-    map.clear();
-    Assert.assertEquals(0, values.size());
-    Assert.assertFalse(values.contains("aaa"));
-  }
-
-  @Test
-  public void keySetBasicTest() {
-    Map<String, String> map = new RedisMap();
-    Set<String> keys = map.keySet();
-
-    map.put("test", "test");
-    Assert.assertEquals(1, keys.size());
-    Assert.assertTrue(keys.contains("test"));
-
-    map.clear();
-    Assert.assertEquals(0, keys.size());
-    Assert.assertFalse(keys.contains("test"));
-  }
-
-  @Test
-  public void entrySetBasicTest() {
-    Map<String, String> map = new RedisMap();
-    Set<Entry<String, String>> entrySet = map.entrySet();
-
-
   }
 
   @Test

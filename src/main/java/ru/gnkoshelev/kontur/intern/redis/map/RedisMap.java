@@ -83,6 +83,7 @@ public class RedisMap implements Map<String, String>, AutoCloseable {
   public void connectToRedisMap(String mapId) {
     cleaner.run();
     MAP_ID = mapId;
+    modificationCount = 0;
     cleaner.setMapId(mapId);
   }
 
@@ -127,12 +128,15 @@ public class RedisMap implements Map<String, String>, AutoCloseable {
     boolean result = false;
     try (Jedis jedisConnection = jedisPool.getResource()) {
       ScanResult<Map.Entry<String, String>> scanResult = jedisConnection.hscan(MAP_ID, "0");
-      while (!result && !scanResult.isCompleteIteration()) {
+      while (!result) {
         result = scanResult.getResult().parallelStream().anyMatch(e -> e.getValue().equals(value));
+        if (scanResult.isCompleteIteration()) {
+          return result;
+        }
         scanResult = jedisConnection.hscan(MAP_ID, scanResult.getCursor());
       }
     }
-    return result;
+    return true;
   }
 
   @Override
