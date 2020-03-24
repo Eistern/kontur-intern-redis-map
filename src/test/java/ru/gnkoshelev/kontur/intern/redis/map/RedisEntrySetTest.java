@@ -27,6 +27,10 @@ public class RedisEntrySetTest {
     map.put("next_test", "next_test");
     Assert.assertEquals(1, entrySet.size());
     Assert.assertFalse(entrySet.remove(new HashMap.SimpleEntry<>("non_existent", "test")));
+
+    entrySet.clear();
+    Assert.assertTrue(map.isEmpty());
+    Assert.assertTrue(entrySet.isEmpty());
   }
 
   @Test

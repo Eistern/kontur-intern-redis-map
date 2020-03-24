@@ -17,7 +17,7 @@ import redis.clients.jedis.Transaction;
 /**
  * @author Daniil Zulin
  */
-public class RedisMap implements Map<String, String>, AutoCloseable {
+public class RedisMap implements Map<String, String> {
 
   private static final String REDIS_IP = "192.168.1.129";
   private static final int REDIS_PORT = 6379;
@@ -69,11 +69,6 @@ public class RedisMap implements Map<String, String>, AutoCloseable {
     cleanable = redisMapCleaner.register(this, cleaner);
 
     shutdownController.registerMap(MAP_ID);
-  }
-
-  @Override
-  public void close() {
-    cleanable.clean();
   }
 
   public String getMapKey() {
@@ -206,8 +201,12 @@ public class RedisMap implements Map<String, String>, AutoCloseable {
 
   @Override
   public void putAll(Map<? extends String, ? extends String> m) {
-    if (m.containsKey(null) || m.containsValue(null)) {
-      throw new NullPointerException();
+    try {
+      if (m.containsKey(null) || m.containsValue(null)) {
+        throw new NullPointerException();
+      }
+    } catch (NullPointerException ignored) {
+
     }
 
     if (m.isEmpty()) {

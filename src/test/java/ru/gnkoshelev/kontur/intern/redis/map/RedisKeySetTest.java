@@ -30,6 +30,9 @@ public class RedisKeySetTest {
 
     map.put("existent", "test");
     Assert.assertFalse(keys.remove("non_existent"));
+    keys.clear();
+    Assert.assertTrue(map.isEmpty());
+    Assert.assertTrue(keys.isEmpty());
   }
 
   @Test

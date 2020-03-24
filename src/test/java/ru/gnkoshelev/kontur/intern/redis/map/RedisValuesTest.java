@@ -25,6 +25,14 @@ public class RedisValuesTest {
     Assert.assertTrue(values.isEmpty());
     Assert.assertFalse(map.containsValue("aaa"));
     Assert.assertTrue(map.isEmpty());
+
+    map.put("test", "test");
+    Assert.assertFalse(map.isEmpty());
+    Assert.assertFalse(values.isEmpty());
+
+    values.clear();
+    Assert.assertTrue(map.isEmpty());
+    Assert.assertTrue(values.isEmpty());
   }
 
   @Test
