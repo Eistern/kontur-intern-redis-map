@@ -1,10 +1,6 @@
 package ru.gnkoshelev.kontur.intern.redis.map;
 
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -32,8 +28,13 @@ public class RedisMapTest {
     Assert.assertEquals("first", map1.get("one"));
     Assert.assertEquals(1, map1.size());
 
+    Assert.assertTrue(map1.containsValue("first"));
     Assert.assertTrue(map1.containsKey("one"));
     Assert.assertFalse(map1.containsKey("two"));
+
+    Assert.assertTrue(map2.containsKey("one"));
+    Assert.assertEquals("ONE", map2.remove("one"));
+    Assert.assertFalse(map2.containsKey("one"));
   }
 
   @Test
