@@ -1,6 +1,7 @@
 package ru.gnkoshelev.kontur.intern.redis.map;
 
 import java.lang.ref.Cleaner;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -17,7 +18,7 @@ import redis.clients.jedis.Transaction;
 /**
  * @author Daniil Zulin
  */
-public class RedisMap implements Map<String, String> {
+public class RedisMap extends AbstractMap<String, String> {
 
   private static final String REDIS_IP = "192.168.1.129";
   private static final int REDIS_PORT = 6379;
@@ -33,14 +34,14 @@ public class RedisMap implements Map<String, String> {
   private static final JedisPool jedisPool = new JedisPool(REDIS_IP, REDIS_PORT);
   private static final Cleaner redisMapCleaner = Cleaner.create();
   private static final ShutdownController shutdownController = new ShutdownController();
-  private final MapCleaner cleaner;
-  private final Cleaner.Cleanable cleanable;
-  private String MAP_ID;
-  private int modificationCount = 0;
 
   static {
     Runtime.getRuntime().addShutdownHook(shutdownController);
   }
+
+  private final MapCleaner cleaner;
+  private String MAP_ID;
+  private int modificationCount = 0;
 
   public RedisMap() {
     try (Jedis jedisConnection = jedisPool.getResource()) {
@@ -49,9 +50,14 @@ public class RedisMap implements Map<String, String> {
     }
 
     cleaner = new MapCleaner(MAP_ID);
-    cleanable = redisMapCleaner.register(this, cleaner);
+    redisMapCleaner.register(this, cleaner);
 
     shutdownController.registerMap(MAP_ID);
+  }
+
+  public RedisMap(Map<String, String> other) {
+    this();
+    this.putAll(other);
   }
 
   @SuppressWarnings("CopyConstructorMissesField")
@@ -66,7 +72,7 @@ public class RedisMap implements Map<String, String> {
     }
 
     cleaner = new MapCleaner(MAP_ID);
-    cleanable = redisMapCleaner.register(this, cleaner);
+    redisMapCleaner.register(this, cleaner);
 
     shutdownController.registerMap(MAP_ID);
   }
@@ -98,9 +104,13 @@ public class RedisMap implements Map<String, String> {
 
   @Override
   public boolean containsKey(Object key) {
-    if (key == null) throw new NullPointerException();
+    if (key == null) {
+      throw new NullPointerException();
+    }
 
-    if (!(key instanceof String)) throw new ClassCastException();
+    if (!(key instanceof String)) {
+      throw new ClassCastException();
+    }
 
     boolean result;
     try (Jedis jedisConnection = jedisPool.getResource()) {
