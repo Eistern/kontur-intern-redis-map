@@ -79,6 +79,9 @@ public class RedisMap extends AbstractMap<String, String> {
 
   @Override
   public boolean equals(Object o) {
+    if (o == null) {
+      return false;
+    }
     if (!(o instanceof RedisMap)) {
       return false;
     }

@@ -38,6 +38,9 @@ public class RedisEntry implements Entry<String, String> {
 
   @Override
   public boolean equals(Object obj) {
+    if (obj == null) {
+      return false;
+    }
     if (!(obj instanceof RedisEntry)) {
       return false;
     }

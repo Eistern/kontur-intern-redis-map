@@ -42,6 +42,45 @@ public class RedisMapTest {
     Assert.assertTrue(map.containsValue("first"));
   }
 
+  @Test
+  public void equalsTest() {
+    RedisMap map = new RedisMap();
+    Map<String, String> copiedMap = new RedisMap(map);
+    Map<String, String> transitiveMap = new RedisMap(map);
+    Map<String, String> otherMap = new RedisMap();
+
+    Assert.assertEquals(map, map);
+
+    Assert.assertEquals(copiedMap, map);
+    Assert.assertEquals(map, copiedMap);
+
+    Assert.assertEquals(copiedMap, map);
+    Assert.assertEquals(copiedMap, map);
+
+    Assert.assertEquals(copiedMap, transitiveMap);
+    Assert.assertEquals(map, transitiveMap);
+
+    Assert.assertNotEquals(otherMap, map);
+    Assert.assertNotEquals(map, otherMap);
+
+    Assert.assertNotEquals(map, null);
+  }
+
+  @Test
+  public void hashCodeTest() {
+    Map<String, String> map = new RedisMap();
+    Map<String, String> copiedMap = new RedisMap((RedisMap) map);
+    Map<String, String> otherMap = new RedisMap();
+
+    Assert.assertEquals(map.hashCode(), map.hashCode());
+
+    Assert.assertEquals(map, copiedMap);
+    Assert.assertEquals(map.hashCode(), copiedMap.hashCode());
+
+    Assert.assertNotEquals(otherMap, map);
+    Assert.assertNotEquals(otherMap.hashCode(), map.hashCode());
+  }
+
   @Test(expected = NullPointerException.class)
   public void containsNullKeyTest() {
     Map<String, String> map = new RedisMap();
