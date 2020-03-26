@@ -75,16 +75,4 @@ public class RedisEntrySetTest {
     map.put("fail-test", "fail-test");
     entryIterator.next();
   }
-
-  @Test
-  public void entrySetElementModification() {
-    Map<String, String> map = new RedisMap();
-    map.put("test", "test");
-
-    Set<Entry<String, String>> entrySet = map.entrySet();
-    Entry<String, String> entry = entrySet.iterator().next();
-
-    entry.setValue("next_test");
-    Assert.assertTrue(map.containsValue("next_test"));
-  }
 }
