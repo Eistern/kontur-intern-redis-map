@@ -68,6 +68,10 @@ public class RedisMapTest {
     RedisMap postCopiedMap = new RedisMap();
     postCopiedMap.connectToRedisMap(map.getMapKey());
 
+    Assert.assertEquals(map, copiedMap);
+    Assert.assertEquals(map, copiedByKeyMap);
+    Assert.assertEquals(map, postCopiedMap);
+
     Assert.assertEquals(copiedMap.get("first"), map.get("first"));
     Assert.assertEquals(copiedByKeyMap.get("first"), map.get("first"));
     Assert.assertEquals(postCopiedMap.get("first"), map.get("first"));

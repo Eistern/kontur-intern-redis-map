@@ -43,7 +43,7 @@ abstract class RedisMapIterator {
     }
     currentEntry = mapIterator.next();
 
-    return currentEntry;
+    return new RedisEntry(source, currentEntry.getKey(), currentEntry.getValue());
   }
 
 

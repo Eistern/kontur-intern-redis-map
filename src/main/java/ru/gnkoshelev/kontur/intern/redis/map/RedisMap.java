@@ -77,6 +77,19 @@ public class RedisMap extends AbstractMap<String, String> {
     shutdownController.registerMap(MAP_ID);
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (!(o instanceof RedisMap)) {
+      return false;
+    }
+    return this.MAP_ID.equals(((RedisMap) o).MAP_ID);
+  }
+
+  @Override
+  public int hashCode() {
+    return this.MAP_ID.hashCode();
+  }
+
   public String getMapKey() {
     return MAP_ID;
   }
