@@ -40,6 +40,9 @@ public class RedisMapTest {
     map.putAll(map1);
     Assert.assertTrue(map.containsKey("one"));
     Assert.assertTrue(map.containsValue("first"));
+
+    Assert.assertNull(map.putIfAbsent("never_existed", "value"));
+    Assert.assertEquals("value", map.get("never_existed"));
   }
 
   @Test

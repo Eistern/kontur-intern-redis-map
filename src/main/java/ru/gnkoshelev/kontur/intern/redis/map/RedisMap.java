@@ -31,6 +31,12 @@ public class RedisMap extends AbstractMap<String, String> {
           + "\tredis.call(\"unlink\", KEYS[1])\n"
           + "\tredis.call(\"unlink\", KEYS[2])\n"
           + "end\n";
+  private static final String REDIS_PUT_IF_ABSENT =
+      "local prev_value = redis.call(\"hget\", KEYS[1], KEYS[2])\n"
+          + "if not prev_value then\n"
+          + "\tredis.call(\"hset\", KEYS[1], KEYS[2], ARGV[1])\n"
+          + "end\n"
+          + "return prev_value\n";
   private static final JedisPool jedisPool = new JedisPool(REDIS_IP, REDIS_PORT);
   private static final Cleaner redisMapCleaner = Cleaner.create();
   private static final ShutdownController shutdownController = new ShutdownController();
@@ -195,6 +201,17 @@ public class RedisMap extends AbstractMap<String, String> {
 
     modificationCount++;
     return result;
+  }
+
+  @Override
+  public String putIfAbsent(String key, String value) {
+    Object result;
+    try (Jedis jedisConnection = jedisPool.getResource()) {
+      result = jedisConnection.eval(REDIS_PUT_IF_ABSENT, 2, MAP_ID, key, value);
+    }
+
+    modificationCount++;
+    return result == null ? null : (String) result;
   }
 
   @Override
