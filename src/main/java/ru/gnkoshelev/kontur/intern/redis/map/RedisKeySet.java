@@ -36,6 +36,23 @@ final class RedisKeySet extends AbstractSet<String> {
     source.clear();
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (o == null) {
+      return false;
+    }
+    if (!(o instanceof RedisKeySet)) {
+      return false;
+    }
+
+    return source.equals(((RedisKeySet) o).source);
+  }
+
+  @Override
+  public int hashCode() {
+    return this.source.hashCode();
+  }
+
   final class RedisKeyIterator extends RedisMapIterator implements Iterator<String> {
 
     RedisKeyIterator() {

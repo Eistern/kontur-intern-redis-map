@@ -28,7 +28,6 @@ final class RedisEntrySet extends AbstractSet<Entry<String, String>> {
     source.clear();
   }
 
-
   @SuppressWarnings("SuspiciousMethodCalls")
   @Override
   public boolean contains(Object o) {
@@ -49,8 +48,25 @@ final class RedisEntrySet extends AbstractSet<Entry<String, String>> {
     return false;
   }
 
-  final class RedisEntryIterator extends RedisMapIterator implements
-      Iterator<Entry<String, String>> {
+  @Override
+  public boolean equals(Object o) {
+    if (o == null) {
+      return false;
+    }
+    if (!(o instanceof RedisEntrySet)) {
+      return false;
+    }
+
+    return source.equals(((RedisEntrySet) o).source);
+  }
+
+  @Override
+  public int hashCode() {
+    return this.source.hashCode();
+  }
+
+  final class RedisEntryIterator extends RedisMapIterator
+      implements Iterator<Entry<String, String>> {
 
     RedisEntryIterator() {
       super(source);

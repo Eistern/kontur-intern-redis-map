@@ -32,6 +32,23 @@ final class RedisValueCollection extends AbstractCollection<String> {
     source.clear();
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (o == null) {
+      return false;
+    }
+    if (!(o instanceof RedisValueCollection)) {
+      return false;
+    }
+
+    return source.equals(((RedisValueCollection) o).source);
+  }
+
+  @Override
+  public int hashCode() {
+    return this.source.hashCode();
+  }
+
   final class RedisValueIterator extends RedisMapIterator implements Iterator<String> {
 
     RedisValueIterator() {

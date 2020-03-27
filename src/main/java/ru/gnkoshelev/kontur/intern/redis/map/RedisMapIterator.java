@@ -46,7 +46,6 @@ abstract class RedisMapIterator {
     return new RedisEntry(source, currentEntry.getKey(), currentEntry.getValue());
   }
 
-
   public void remove() {
     if (currentEntry == null) {
       throw new IllegalStateException();
