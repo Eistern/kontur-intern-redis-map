@@ -238,7 +238,9 @@ public class RedisMap extends AbstractMap<String, String> {
       }
     }
 
-    modificationCount++;
+    if (result != null) {
+      modificationCount++;
+    }
     return result;
   }
 
